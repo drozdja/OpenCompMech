@@ -5,9 +5,9 @@ mechanisms — designed to be the substrate a graph model (GNN) trains on, and t
 interoperate with the existing raster pipeline through a shared boundary-value
 problem and the FEA verifier.
 
-*Status: 2026-07-23. Code: [`src/graph/`](../src/graph/). CLI:
+Code: [`src/graph/`](../src/graph/). CLI:
 [`scripts/mech_to_graph.py`](../scripts/mech_to_graph.py). Tests:
-[`tests/test_mech_graph.py`](../tests/test_mech_graph.py).*
+[`tests/test_mech_graph.py`](../tests/test_mech_graph.py).
 
 ---
 
@@ -89,7 +89,7 @@ python scripts/mech_to_graph.py --cache data/v1_broad_cache_128 \
     --per-family 25 --dump runs/graph_export --arrays
 ```
 
-## Validation (measured)
+## Validation
 
 Over 25 designs per family at 128px, one code path:
 
@@ -103,8 +103,7 @@ Over 25 designs per family at 128px, one code path:
 
 Plus (unit tests): **SE(2)-equivariance verified** (invariant features unchanged
 under rotation; `node_vec` rotates with R), **serialization lossless**, tensor
-shapes correct, PyG/torch export works. See
-[figure](figures_128px/unified_graph_converter.png) for the schema across families.
+shapes correct, PyG/torch export works.
 
 ## Dependencies
 
@@ -130,7 +129,7 @@ the loop is an explicit cell.
 emits the tensors an **E(n)-Equivariant Topological Neural Network** consumes
 ([ETNN, arXiv:2405.15429](https://arxiv.org/abs/2405.15429)).
 
-## Why a combinatorial complex, not a simplicial or cell complex
+## Why a combinatorial complex
 
 A CC is a triple `(S, X, rk)`: a ground set, a set of cells that are non-empty
 subsets of it, and a rank function monotone under inclusion. That is *all* it
@@ -146,7 +145,7 @@ since it would demand every face be a simplex.
 | 2 | **hole** | a bounded face of the planar skeleton — a closed loop of struts |
 | 2 | **pad** | fused wide nodes: a 2D region where struts merge |
 
-## Equivariance is structural, not learned
+## Equivariance
 
 Following ETNN, a rank-2 cell stores **invariant scalars only**
 (`area, perimeter, n_nodes, is_hole, is_pad, circularity`) and its **position is
@@ -155,7 +154,7 @@ every cell position transforms as `R p` automatically while no cell feature
 changes. There is nothing to get wrong at training time, and the unit tests
 check exactly this across all three ranks.
 
-## Correctness: Euler's formula, not eyeballing
+## Correctness check: Euler's formula
 
 Face enumeration walks directed half-edges of the planar embedding, always
 turning clockwise, and drops each connected component's outer face. Rather than
@@ -180,7 +179,7 @@ Read honestly: the rank-2 lift adds a lot for **trusses and SIMP continua**
 as exact trees (`E = V - 1`). The lift is worth its complexity only for the
 loop-bearing families, and that is a measurement, not an assumption.
 
-### A representation bug this exposed
+### Closed rings and parallel struts
 
 A closed ring — the archetypal compliant flexure loop — has *no junction*, so the
 skeleton graph represented it as **one node with a self-loop**. The enclosed
@@ -200,10 +199,10 @@ shape) and curved struts order correctly.
 | `inc_01`, `inc_12`, `inc_02` | (2,·) | — | incidence between ranks |
 | `adj_00`, `adj_22` | (2,·) | — | within-rank adjacency |
 
-## Next step (deliberately not done yet)
+## Status of the rank-2 lift
 
-The rank-2 cells are **built and validated but not yet consumed by a model** — the
-generator below uses the rank-0/1 graph. Wiring `inc_12` into the message passing
-is the natural follow-up, and it should be judged by whether pass@K improves on
-the loop-bearing families, where the table above says the information actually
-exists.
+The rank-2 cells are built and validated but **not yet consumed by a model**;
+the generator in [GRAPH_MODEL.md](GRAPH_MODEL.md) uses the rank-0/1 graph only.
+Wiring `inc_12` into the message passing is the natural follow-up, and should be
+judged on the loop-bearing families, where the table above shows the extra
+information actually exists.

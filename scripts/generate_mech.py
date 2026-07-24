@@ -197,7 +197,7 @@ def generate_single_sample(
     """Generate a single mechanism sample."""
 
     # Cycle through the requested problem types for diversity. Default excludes
-    # 'amplifier' (floating-translator degeneracy, 0% yield — docs/DATASET_V1.md
+    # 'amplifier' (floating-translator degeneracy, 0% yield — docs/DATASET.md
     # §5.9); pass problem_types explicitly to override.
     if problem_types is None:
         problem_types = ['inverter', 'gripper', 'random', 'crusher', 'crank_slider']

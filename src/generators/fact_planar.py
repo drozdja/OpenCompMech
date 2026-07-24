@@ -9,7 +9,7 @@ canonical single-DOF cases are:
     physical pivot. Ports at radii r1 (input) and r2 (output) give geometric
     advantage r2/r1 BY CONSTRUCTION — this is the parallel-motion / amplifier
     archetype that SIMP could not reach (floating-translator degeneracy, see
-    the family notes in docs/DATASET_V1.md).
+    the family notes in docs/DATASET.md).
   * TRANSLATION along a direction t: all blade axes PARALLEL (perpendicular
     to t) — the parallelogram guide (already used as the slider's prismatic
     joint in rigid_replace.py).

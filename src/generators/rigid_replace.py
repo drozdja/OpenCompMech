@@ -13,7 +13,7 @@ No optimizer, no degenerate basins: one construction + one FEA labeling solve
 per sample (~seconds vs ~minutes for SIMP). Kinematics (I/O directions,
 transmission angle, Grashof) are inherited from the linkage sampler, so the
 output direction is correct by construction. See EXECUTION_PLAN.md Phase H and
-docs/DATASET_V1.md (generator families and type distinctness).
+docs/DATASET.md (generator families and type distinctness).
 
 Stiffness contrast is the design rule: bending stiffness ~ w^3, so 7 px links
 vs 3 px necks gives ~13x contrast — links act rigid, necks act as pivots.
@@ -447,7 +447,7 @@ def construct_compound_lever_flexure(
     pins GA near 1 regardless of the lever ratios; stiffening knobs moved
     u_in but never the ratio. Kept as a DIVERSITY type (distinct two-stage
     linkage motif, ~100% gate yield, 0 hinges) — the amplifier role belongs
-    to the single rr_lever (GA_med 1.08). See docs/DATASET_V1.md on the amplifier
+    to the single rr_lever (GA_med 1.08). See docs/DATASET.md on the amplifier
     ceiling note.
 
     Layout (local frame, u = lever axis, v = coupler direction):
@@ -618,7 +618,7 @@ def construct_bridge_amp_flexure(
         the driven corner fought its own rocker (u_in ~3, GA<=0.69).
     The guide fixes both: it reacts the transverse rocker force at R and
     leaves exactly one soft path — arm rotation about the corner necks.
-    (This is also the archetype SIMP could never reach, docs/DATASET_V1.md.)
+    (This is also the archetype SIMP could never reach, docs/DATASET.md.)
 
     MEASURED OUTCOME (2026-07-17): GA 0.5-0.85, med 0.62 — better-behaved
     than the rhombus but still <1: knee axial-compliance loss scales as
@@ -626,7 +626,7 @@ def construct_bridge_amp_flexure(
     and softer k_out did not move it. Kept as a DIVERSITY type (knee/toggle
     motif). Amplifier ceiling at 128 px stands at rr_lever's ~1.4; deeper
     amplification needs finer resolution or true parameter optimization
-    (Family C). See docs/DATASET_V1.md on the amplifier ceiling.
+    (Family C). See docs/DATASET.md on the amplifier ceiling.
     """
     if k_in is None:
         k_in = 0.01

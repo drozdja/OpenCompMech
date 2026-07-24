@@ -125,7 +125,7 @@ def main():
         the hinge check; reconstruct_valid floors member widths, projects to the
         spec's volume, clips to the domain and repairs single-pixel hinges. This
         is the ground-truth ceiling's own decoder, so the model is scored on the
-        same footing as its ceiling (see docs/GNN_APPROACH.md).
+        same footing as its ceiling (see docs/GRAPH_MODEL.md).
         """
         with open(cache.stem_for_row(int(row)) + ".json") as f:
             meta = json.load(f)

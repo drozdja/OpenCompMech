@@ -8,7 +8,7 @@ number here comes from a solver, never from similarity to a training example.
 > **Status: work in progress.** The generation pipeline, the FEA verifier, the
 > graph representation and the evaluation protocol are implemented and tested.
 > **Comparative model results are not yet claim-bearing** and are deliberately
-> not reported — see [Honest status](#honest-status) below. This repository
+> not reported — see [Evaluation status](#evaluation-status) below. This repository
 > currently documents a *method*, not a benchmark result.
 
 ## What this is
@@ -21,7 +21,7 @@ Everything is **normalized 2D linear elasticity**. It is not a manufacturing
 dataset, not a validated engineering tool, and makes no claim about any physical
 part.
 
-## Why it might be interesting
+## What is here
 
 **The verification gate is the product.** Most generative-design work reports
 similarity to a reference. Here a candidate must pass a full-resolution sparse
@@ -79,7 +79,7 @@ assert euler_check(g)["ok"]                                # bounded faces = E-V
 data = to_pyg(g)          # torch_geometric Data, or a tensor dict without it
 ```
 
-## Honest status
+## Evaluation status
 
 A pre-publication audit of the first CNN-vs-GNN comparison found it **not
 publication-grade**. The specific problems, all of which are being fixed rather
@@ -108,7 +108,7 @@ rule rather than by hand: a spec is eligible only if its own native reference
 passes the gate and it has a converted graph, and eligible specs are partitioned
 — stratified by mechanism type — into disjoint **tuning** and **untouched test**
 sets with full hash provenance. Remaining work is listed in
-[docs/GNN_APPROACH.md](docs/GNN_APPROACH.md).
+[docs/GRAPH_MODEL.md](docs/GRAPH_MODEL.md).
 
 ## Limitations
 

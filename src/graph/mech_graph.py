@@ -585,7 +585,7 @@ def reconstruct_valid(graph: MechGraph, target_vf=None, domain_mask=None,
     not a *working mechanism*: it pinches to ~1px where thin members meet, and
     the gate rejects any solid that does not survive a 1px erosion.  Measured,
     the naive path passes the gate ~0.22 of the time; this path passes ~0.63
-    (see docs/GNN_APPROACH.md), which is the difference between "the graph
+    (see docs/GRAPH_MODEL.md), which is the difference between "the graph
     representation is the wrong fit" and "it is competitive".
 
     The recipe, each step measured to matter:
