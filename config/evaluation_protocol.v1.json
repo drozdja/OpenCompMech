@@ -1,0 +1,35 @@
+{
+  "format": "opencompmech.evaluation-protocol.v1",
+  "name": "full_resolution_sparse_mechanism_v1",
+  "description": "Fresh full-resolution sparse-FEA re-evaluation of a generated mechanism under its stored BVP. Normalized linear-elastic units only; this is not a manufacturing or flight-qualification gate.",
+  "density_transform": {
+    "resample": "nearest",
+    "enforce_domain_mask": true,
+    "max_outside_domain_mean": 1e-06,
+    "pre_mask_outside_policy": "For an integral coarse-to-source mapping, material in a zero-coverage coarse cell fails; mixed boundary-cell source-void occupancy is recorded as a representation alias and exact-domain masked before all checks.",
+    "coarse_volume_projection": "Use fractional source-area coverage weights at the model grid so nearest expansion followed by exact-domain masking preserves the requested active-domain volume fraction."
+  },
+  "geometry": {
+    "vf_relative_tolerance": 0.05,
+    "max_gray_fraction": 0.2,
+    "min_feature_size_px": 2,
+    "require_no_point_hinge": true
+  },
+  "function": {
+    "min_output_stroke": 1.0,
+    "default_min_signed_ga": 0.25,
+    "use_source_ga_floor": true,
+    "min_output_alignment": 0.7071067811865476,
+    "max_input_off_axis": 0.7,
+    "max_gini_for_simp": 0.75,
+    "min_output_selectivity": 1.0
+  },
+  "interface": {
+    "default_require_port_access": false,
+    "min_clearance": 0.5
+  },
+  "limitations": [
+    "2D linear-elastic normalized-unit analysis",
+    "no dimensional material, thickness, yield, fatigue, buckling, contact, friction, process, or physical-test qualification"
+  ]
+}

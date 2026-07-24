@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Environments
+venv/
+.venv/
+env/
+
+# Generated corpus, caches and model artifacts (not distributed with the code)
+data/
+runs/
+site/
+corpus_viz*/
+*.pt
+*.npz
+*.f16
+*.f32
+
+# Figures / rendered output
+*.png
+*.jpg
+*.svg
+*.mp4
+
+# Logs and scratch
+*.log
+nohup.out
+_archive/
+scratch/
+tmp/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
