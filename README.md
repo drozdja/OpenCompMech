@@ -81,34 +81,57 @@ data = to_pyg(g)          # torch_geometric Data, or a tensor dict without it
 
 ## Evaluation status
 
-A pre-publication audit of the first CNN-vs-GNN comparison found it **not
-publication-grade**. The specific problems, all of which are being fixed rather
-than papered over:
+A comparison of the raster (CNN) and graph (GNN) models has been run through
+`scripts/compare_models.py`, which drives both models so that specifications,
+candidate count, seed schedule and FEA gate are identical by construction.
+Specifications come from a frozen protocol artifact
+(`scripts/freeze_eval_protocol.py`) whose eligibility rule is applied
+mechanically rather than by hand, with disjoint tuning and untouched test sets.
 
-1. **The evaluation failed its own protocol self-check.** The harness requires
-   every native reference design to pass the gate before model numbers may be
-   interpreted. One did not, and the code says so explicitly. Numbers from a run
-   in that state are not quotable.
-2. **It was not a clean representation ablation.** The graph pipeline is scored
-   through a deterministic decoder (anchor connection, volume projection, hinge
-   repair) with no raster equivalent — a pipeline-vs-pipeline comparison, not
-   representation-vs-representation.
-3. **Budgets were not matched.** The two models saw different numbers of
-   training examples, and neither was meaningfully tuned.
-4. **The holdout is IID-like.** Nearly every spec in the corpus is unique, so
-   the "lineage" split is effectively a random row split, not a generalization
-   test.
-5. **A withdrawn claim.** An earlier write-up divided a pass@8 model number by a
-   pass@1 decoder ceiling and called the ratio "fraction of ceiling reached".
-   That is invalid — different K, and a pass@1 ceiling is not an upper bound on
-   pass@8. It has been removed.
+**n = 200 held-out specifications, K = 8, training exposure matched at 2.56M
+examples, neither model tuned.** 95% percentile-bootstrap CIs over specs.
 
-`scripts/freeze_eval_protocol.py` addresses (1) and the sample-size problem by
-rule rather than by hand: a spec is eligible only if its own native reference
-passes the gate and it has a converted graph, and eligible specs are partitioned
-— stratified by mechanism type — into disjoint **tuning** and **untouched test**
-sets with full hash provenance. Remaining work is listed in
-[docs/GRAPH_MODEL.md](docs/GRAPH_MODEL.md).
+| method | pass@1 | pass@8 |
+|---|---:|---:|
+| `reference_native` (protocol self-check) | 1.000 | 1.000 |
+| `raster_raw` | 0.720 [0.655, 0.775] | **0.905** [0.860, 0.945] |
+| `raster_projected` | 0.720 [0.655, 0.775] | **0.905** [0.860, 0.945] |
+| `graph_raw` | 0.005 [0.000, 0.015] | 0.040 [0.015, 0.070] |
+| `graph_repaired` | 0.110 [0.065, 0.150] | **0.335** [0.270, 0.400] |
+
+Three things worth stating plainly:
+
+1. **The raster model wins**, and not narrowly. The compactness, explicit
+   connectivity and built-in equivariance that motivated the graph model did not
+   translate into physical validity.
+2. **Most of the graph pipeline's performance is deterministic decoder repair**,
+   not learned behaviour (`graph_raw` 0.040 to `graph_repaired` 0.335). The
+   raster pipeline needs none — its raw and post-processed numbers are identical.
+   Scoring each pipeline twice, raw and repaired, is what makes this visible.
+3. **The graph representation is family-dependent.** It matches the raster model
+   on linkages and ground-structure trusses and scores 0.00 on SIMP continuum
+   families, where a mechanism is a distributed compliant body rather than a
+   network of struts. See [docs/GRAPH_MODEL.md](docs/GRAPH_MODEL.md).
+
+### A corrected error
+
+An earlier internal write-up claimed the opposite — that the graph model beat the
+raster model at 128px. Both numbers in that claim were wrong. The raster figure
+was an evaluation artifact: `guided_sample`'s on-device volume projection
+collapses the density at 128px, leaving ~0.08% of pixels above threshold for a
+20% volume target, so every candidate failed connectivity. The graph figure came
+from a non-comparable specification set predating the frozen protocol. A separate
+claim dividing a pass@8 number by a pass@1 ceiling was invalid and is withdrawn.
+
+### What this does not yet establish
+
+- Neither model is tuned. Equal *tuning budgets* (both zero here) make the
+  comparison fair, but the absolute numbers are not near a ceiling.
+- Single training seed and single sampling-seed schedule.
+- The holdout is IID-like, so this measures in-distribution performance, not
+  generalization. A held-out mechanism type or family is the meaningful test.
+- The raster checkpoint was resumed mid-run with a reset optimizer, making it a
+  capacity probe rather than a clean architecture ablation.
 
 ## Limitations
 

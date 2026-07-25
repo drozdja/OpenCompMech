@@ -5,13 +5,15 @@ the raster diffusion model. Code: [`src/ml/egnn.py`](../src/ml/egnn.py),
 [`src/ml/graph_tensors.py`](../src/ml/graph_tensors.py),
 [`src/ml/graph_flow.py`](../src/ml/graph_flow.py).
 
-> **No comparative result is reported here.** See
-> [Evaluation status](#evaluation-status).
+> **Result:** at matched training exposure the raster model substantially
+> outperforms this one. See
+> [Result](#result-the-raster-model-outperforms-the-graph-model).
 
-## Motivation
+## Motivation (not borne out)
 
-Three properties motivate a graph model over a raster model. They are reasons to
-run the experiment, not findings.
+Three properties motivated building a graph model. The measurement below
+contradicts all three as decisive advantages. They are recorded because the
+reasoning is worth understanding, not because it was validated.
 
 **Compactness.** A padded graph is roughly an order of magnitude fewer values
 per design than a dense raster, and far smaller on disk because the adjacency is
@@ -119,42 +121,116 @@ measurement:
   thin members meet, and the gate rejects any solid that does not survive a
   one-pixel erosion. An erosion-robust decoder recovers most of that loss.
 
-## Evaluation status
+## Result: the raster model outperforms the graph model
 
-A first generator has been trained and scored end to end. **Those numbers are
-not reported**, because a pre-publication audit found the run does not support a
-claim:
+Measured with `scripts/compare_models.py` on the frozen protocol's test split.
+One driver runs both models, so specifications, candidate count, seed schedule
+and FEA gate are identical by construction. **Training exposure is matched at
+2.56M examples** (CNN 80k x 32, GNN 40k x 64) and neither model has been tuned,
+so both received the same (zero) tuning budget.
 
-1. **The evaluation failed its own protocol self-check.** The harness requires
-   every native reference to pass the gate before model numbers may be
-   interpreted; one did not, and the code says so.
-2. **Not a clean representation ablation.** The graph pipeline is scored through
-   the deterministic decoder above, which the raster pipeline has no equivalent
-   of.
-3. **Budgets were not matched.** The models saw different numbers of training
-   examples and neither was meaningfully tuned.
-4. **The holdout is IID-like.** See [DATASET.md](DATASET.md).
+n = 200 specs, K = 8, 95% percentile-bootstrap CIs over specs.
 
-A withdrawn claim: an earlier write-up divided a pass@8 model number by a pass@1
-decoder ceiling and reported the ratio as "fraction of ceiling reached". That is
-invalid — different K, and a pass@1 ceiling is not an upper bound on pass@8,
-since a generator with K attempts can find a passing design the ground-truth
-graph does not yield.
+| method | pass@1 | pass@8 | candidate rate |
+|---|---:|---:|---:|
+| `reference_native` (self-check) | 1.000 | 1.000 | 1.000 |
+| `raster_raw` | 0.720 [0.655, 0.775] | **0.905** [0.860, 0.945] | 0.719 |
+| `raster_projected` | 0.720 [0.655, 0.775] | **0.905** [0.860, 0.945] | 0.723 |
+| `graph_raw` | 0.005 [0.000, 0.015] | 0.040 [0.015, 0.070] | 0.005 |
+| `graph_repaired` | 0.110 [0.065, 0.150] | **0.335** [0.270, 0.400] | 0.099 |
 
-[`scripts/freeze_eval_protocol.py`](../scripts/freeze_eval_protocol.py)
-addresses (1) and the sample-size problem by rule: a specification is eligible
-only if its own native reference passes the gate and it has a converted graph,
-and eligible specifications are partitioned — stratified by mechanism type —
-into disjoint tuning and untouched test sets with full hash provenance.
+**The raster model wins decisively** — 0.905 vs 0.335 pass@8, CIs nowhere near
+overlapping — at equal data exposure, despite having no equivariance and no
+explicit connectivity. The motivating arguments for the graph representation did
+not survive measurement.
 
-Remaining work before any comparative number is published:
+### Almost all of the graph pipeline's performance is decoder repair
 
-- decompose learned performance from decoder repair (raw and repaired, both
-  pipelines)
-- match training exposure in examples seen, and report parameters and compute
-- give both models an equal tuning budget, then repeat the best configurations
-  across several sampling seeds
-- add a held-out mechanism type or family experiment
+`graph_raw` 0.040 to `graph_repaired` 0.335: roughly **88% of what the graph
+pipeline achieves comes from deterministic post-processing**, not from the
+learned model. The raster pipeline is the opposite — `raster_raw` and
+`raster_projected` are identical to three decimals, so it needs no repair at all.
+
+A single end-to-end number would have hidden this. It is visible only because
+each pipeline was scored twice, raw and repaired.
+
+### Where the graph representation does work
+
+| type | raster pass@8 | graph pass@8 |
+|---|---:|---:|
+| rr_compound_lever | 1.00 | **1.00** |
+| rr_lever | 1.00 | 0.73 |
+| fact_translation | 1.00 | 0.67 |
+| gs_truss | 0.67 | 0.53 |
+| gs_opt | 0.47 | **0.47** |
+| rr_four_bar | 1.00 | 0.33 |
+| rr_bridge_amp | 1.00 | 0.27 |
+| fact_rotation | 1.00 | 0.20 |
+| rr_slider_crank | 0.87 | 0.20 |
+| crusher | 1.00 | 0.07 |
+| crank_slider | 0.20 | 0.00 |
+| gripper / inverter / mmc_opt | 1.00 | **0.00** |
+
+The pattern follows what the representation is: a medial-axis strut graph. It
+matches the raster model on **linkages and ground-structure trusses**
+(`rr_compound_lever`, `gs_opt`), stays competitive on `rr_lever`, `gs_truss` and
+`fact_translation`, and collapses to zero on **SIMP continuum families**
+(`gripper`, `inverter`, `mmc_opt`, `crusher`), where the mechanism is a
+distributed compliant body rather than a network of struts.
+
+That is a representation result, not a model result: skeletonizing a continuum
+into struts discards the thing that makes it work.
+
+### How it fails
+
+`graph_repaired`'s dominant failures are functional, not geometric:
+`signed_ga` (1351), `minimum_output_stroke` (1061), `output_alignment` (764),
+`positive_output` (635). The graph model produces structures that are
+geometrically plausible and connected but move the wrong way, or not far enough.
+
+### A withdrawn claim and a corrected measurement
+
+An earlier version of this document reported the opposite conclusion — that the
+graph model beat the raster model at 128px, 0.300 against 0.05. **Both numbers
+were wrong.**
+
+- The 0.05 raster figure was an **evaluation artifact**. `guided_sample`'s
+  on-device volume projection collapses the density at 128px: for a 20% volume
+  target only ~0.08% of pixels survive thresholding, so every candidate failed
+  `bc_connected` and `mechanism_path`. `scripts/eval_harness.py` uses that path,
+  with a comment asserting the follow-up projection is "normally a numerical
+  no-op" — true only because the field was already destroyed. The comparison
+  driver samples raw and projects explicitly instead.
+- The graph figure came from a different, non-comparable spec selection, scored
+  before the frozen protocol existed.
+
+The same document also divided a pass@8 model number by a pass@1 decoder ceiling
+and called the ratio "fraction of ceiling reached". That is invalid twice over:
+different K, and a pass@1 ceiling does not bound pass@8, since a generator with
+K attempts may find a passing design the ground-truth graph does not yield.
+
+### What this supports, and what it does not
+
+Supported: at matched data exposure and equal (zero) tuning, on this corpus, the
+raster model is substantially better overall, and the graph representation is
+viable only for strut-like mechanism families.
+
+Not yet supported — a general claim about CNNs versus GNNs. Outstanding:
+
+- neither model is tuned; an equal tuning budget could move both
+- single training seed and single sampling-seed schedule
+- the holdout is IID-like, so this measures in-distribution performance
+- the base-96 raster checkpoint was resumed mid-run with a reset optimizer, so
+  it is a capacity probe rather than a clean architecture ablation
+
+### Reproduce
+
+```bash
+COMP2D_SAMPLE_PRECISION=fp32 python scripts/eval_graph.py \
+    --graphs data/v1_graph_128 --cache data/v1_broad_cache_128 \
+    --ckpt runs/v1graph_128/ckpt_final.pt --out runs/v1graph_128_eval \
+    --n-specs 60 --K 8 --steps 50 --cfg 1.0 --workers 8
+```
 
 ## Usage
 
