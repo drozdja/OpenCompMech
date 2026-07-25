@@ -58,17 +58,26 @@ src/ml/            raster model (UNet, rectified flow) + graph model (EGNN)
 src/graph/         canonical mechanism graph, ETNN complex lift, PyG export
 scripts/           generation, training, evaluation, auditing
 tests/             unit tests (graph schema, equivariance, gate policy, harness)
+examples/          self-contained quickstart (no corpus or GPU required)
 config/            frozen evaluation protocol and split plans
 ```
 
 ## Getting started
 
+No corpus, GPU or trained model is needed to try the graph representation:
+
 ```bash
-pip install -r requirements.txt
-python -m pytest tests/ -q          # tests run without a GPU
+pip install -e ".[graph,viz,dev]"
+python examples/quickstart.py        # raster -> graph -> ETNN cells -> raster
+pytest tests/ -q                     # the suite runs on CPU
 ```
 
-The graph library is usable standalone and has no hard GNN-framework dependency:
+![quickstart: raster to graph to rank-2 cells and back](docs/img/quickstart.png)
+
+`examples/quickstart.py` builds a synthetic shape, converts it with the same
+code path every generator family uses, lifts it to a combinatorial complex, and
+checks the result against Euler's formula. The graph library has no hard
+GNN-framework dependency:
 
 ```python
 from src.graph import from_raster, to_pyg, build_cells, euler_check
@@ -78,6 +87,9 @@ build_cells(g)                                             # rank-2 ETNN lift
 assert euler_check(g)["ok"]                                # bounded faces = E-V+C
 data = to_pyg(g)          # torch_geometric Data, or a tensor dict without it
 ```
+
+Training and evaluation additionally need PyTorch (`pip install -e ".[ml]"`,
+with a build matching your accelerator) and a generated corpus.
 
 ## Evaluation status
 

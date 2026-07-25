@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+title: >-
+  OpenCompMech: verification-first generation of 2D compliant mechanisms
+message: >-
+  If you use this software, please cite it using the metadata from this file.
+type: software
+authors:
+  - name: OpenCompMech Contributors
+repository-code: "https://github.com/drozdja/opencompmech"
+abstract: >-
+  Research code for generating 2D compliant mechanisms across five generator
+  families and verifying them with sparse finite-element analysis. A candidate
+  counts only if a fresh FEA solve confirms it works, so results are reported as
+  verified pass rates rather than similarity to a reference design. Includes a
+  reusable, generator-independent SE(2)-equivariant graph representation with an
+  ETNN-style combinatorial-complex lift, and a frozen evaluation protocol for
+  comparing generative models under identical conditions.
+keywords:
+  - topology optimization
+  - compliant mechanisms
+  - finite element analysis
+  - generative models
+  - graph neural networks
+  - equivariance
+license: MIT
+version: 0.1.0

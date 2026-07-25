@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "opencompmech"
+version = "0.1.0"
+description = "Verification-first generation of 2D compliant mechanisms with FEA screening"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = [
+    "topology-optimization", "compliant-mechanisms", "finite-element",
+    "generative-models", "graph-neural-networks", "equivariance",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering",
+]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.12",
+]
+
+[project.optional-dependencies]
+# Raster <-> graph conversion (src/graph) and the ETNN lift.
+graph = ["scikit-image>=0.24", "sknw>=0.15"]
+# Model training and sampling. Install a torch build matching your accelerator.
+ml = ["torch>=2.2"]
+# Figures and montages.
+viz = ["matplotlib>=3.8", "pillow>=10.0"]
+dev = ["pytest>=8.0"]
+
+[tool.setuptools]
+packages = ["src", "src.core", "src.generators", "src.graph", "src.io",
+            "src.ml", "src.solvers", "src.validation"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

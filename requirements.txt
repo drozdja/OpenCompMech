@@ -1,14 +1,21 @@
-# Core dependencies for COMP2D dataset generation
+# Core: FEA, generators, validation
 numpy>=1.26
 scipy>=1.12
-matplotlib>=3.8
-tqdm>=4.66
 
-# Graph representation (src/graph): raster->graph converter
+# Raster <-> graph conversion (src/graph) and the ETNN rank-2 lift
 scikit-image>=0.24
 sknw>=0.15
 
-# Optional: for development/testing
-# jax>=0.6.2
-# jaxlib>=0.6.2
-# torch-geometric  # for to_pyg() Data objects; falls back to a tensor dict without it
+# Figures, montages and the quickstart example's --save-figure
+matplotlib>=3.8
+pillow>=10.0
+tqdm>=4.66
+
+# Tests
+pytest>=8.0
+
+# Models (src/ml). Install a build matching your accelerator; see pytorch.org.
+# torch>=2.2
+
+# Optional: to_pyg() returns a PyG Data object when present, else a tensor dict.
+# torch-geometric

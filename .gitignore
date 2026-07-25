@@ -20,7 +20,7 @@ corpus_viz*/
 *.f16
 *.f32
 
-# Figures / rendered output
+# Figures / rendered output (docs/img is committed, see negation below)
 *.png
 *.jpg
 *.svg
@@ -37,3 +37,7 @@ tmp/
 .vscode/
 .idea/
 .DS_Store
+
+# Committed documentation figures
+!docs/img/
+!docs/img/*.png

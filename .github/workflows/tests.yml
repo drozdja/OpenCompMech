@@ -1,0 +1,38 @@
+name: tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          # No torch: the suite below runs on CPU without it, and the graph
+          # library degrades to numpy when torch is unavailable.
+          pip install numpy scipy scikit-image sknw pytest
+
+      - name: Graph representation tests
+        run: |
+          pytest tests/test_mech_graph.py tests/test_mech_complex.py \
+                 tests/test_graph_tensors.py -q
+
+      - name: Quickstart example
+        run: python examples/quickstart.py
