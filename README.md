@@ -7,9 +7,11 @@ number here comes from a solver, never from similarity to a training example.
 
 > **Status: work in progress.** The generation pipeline, the FEA verifier, the
 > graph representation and the evaluation protocol are implemented and tested.
-> **Comparative model results are not yet claim-bearing** and are deliberately
-> not reported — see [Evaluation status](#evaluation-status) below. This repository
-> currently documents a *method*, not a benchmark result.
+> Model comparisons are reported under a frozen protocol, but from a **single
+> training seed on a synthetic corpus** — they characterise these two models on
+> this data, and are not a benchmark result for CNNs versus GNNs in general. See
+> [Evaluation status](#evaluation-status) and
+> [What this does not yet establish](#what-this-does-not-yet-establish).
 
 ## What this is
 
@@ -100,8 +102,10 @@ Specifications come from a frozen protocol artifact
 (`scripts/freeze_eval_protocol.py`) whose eligibility rule is applied
 mechanically rather than by hand, with disjoint tuning and untouched test sets.
 
-**n = 200 held-out specifications, K = 8, training exposure matched at 2.56M
-examples, neither model tuned.** 95% percentile-bootstrap CIs over specs.
+First, **in distribution** — every mechanism type in the test set also appears
+in training. **n = 200 held-out specifications, K = 8, training exposure matched
+at 2.56M examples, neither model tuned.** 95% percentile-bootstrap CIs over
+specs.
 
 | method | pass@1 | pass@8 |
 |---|---:|---:|
@@ -113,9 +117,10 @@ examples, neither model tuned.** 95% percentile-bootstrap CIs over specs.
 
 Three things worth stating plainly:
 
-1. **The raster model wins**, and not narrowly. The compactness, explicit
-   connectivity and built-in equivariance that motivated the graph model did not
-   translate into physical validity.
+1. **The raster model wins in distribution**, and not narrowly. The compactness,
+   explicit connectivity and built-in equivariance that motivated the graph model
+   did not translate into physical validity on familiar mechanism types. (Under a
+   family holdout this reverses — see below.)
 2. **Most of the graph pipeline's performance is deterministic decoder repair**,
    not learned behaviour (`graph_raw` 0.040 to `graph_repaired` 0.335). The
    raster pipeline needs none — its raw and post-processed numbers are identical.
@@ -135,15 +140,51 @@ collapses the density at 128px, leaving ~0.08% of pixels above threshold for a
 from a non-comparable specification set predating the frozen protocol. A separate
 claim dividing a pass@8 number by a pass@1 ceiling was invalid and is withdrawn.
 
+### Generalization: the ranking reverses
+
+The table above is in-distribution — every mechanism type in the test set also
+appears in training. That measures interpolation, and it is the setting a large
+convolutional model should be expected to win.
+
+So one entire family was **removed from training** and both models were
+retrained from scratch on the reduced corpus at the same matched exposure, then
+scored on 200 held-out specifications from the unseen family.
+
+| method | pass@1 | pass@8 |
+|---|---:|---:|
+| `reference_native` (self-check) | 1.000 | 1.000 |
+| `raster_raw` / `raster_projected` | 0.060 [0.030, 0.095] | 0.180 [0.130, 0.235] |
+| `graph_raw` | 0.000 [0.000, 0.000] | 0.015 [0.000, 0.035] |
+| `graph_repaired` | 0.110 [0.070, 0.155] | **0.400** [0.335, 0.470] |
+
+On an unseen family the graph pipeline more than doubles the raster model, with
+disjoint intervals. Per type, with and without the family in training, the
+raster model falls from 1.00 to 0.03 on `fact_translation` while the graph
+pipeline is statistically unchanged (0.67 to 0.68). The failure modes explain
+it: 90% of raster candidates fail the gate's basic *geometry* check — they are
+not coherent structures — whereas the graph decoder builds a connected strut
+network by construction and fails instead on *function*.
+
+The honest caveat is that `graph_raw` is near zero in both settings, so what
+generalizes is largely the representation and its deterministic decoder rather
+than the learned model. The supported claim is about the pipeline: constraining
+a generative model to a representation that can only express valid structures
+buys real out-of-distribution robustness. See
+[docs/GRAPH_MODEL.md](docs/GRAPH_MODEL.md).
+
 ### What this does not yet establish
 
 - Neither model is tuned. Equal *tuning budgets* (both zero here) make the
   comparison fair, but the absolute numbers are not near a ceiling.
-- Single training seed and single sampling-seed schedule.
-- The holdout is IID-like, so this measures in-distribution performance, not
-  generalization. A held-out mechanism type or family is the meaningful test.
-- The raster checkpoint was resumed mid-run with a reset optimizer, making it a
-  capacity probe rather than a clean architecture ablation.
+- Single training seed and single sampling-seed schedule, and one held-out
+  family. The direction of the generalization result is clear; its magnitude
+  rests on one experiment.
+- The raster checkpoint in the in-distribution table was resumed mid-run with a
+  reset optimizer, making it a capacity probe rather than a clean architecture
+  ablation. The holdout checkpoints were trained straight through.
+- Per-specification per-method outcomes are not stored in the result artifact,
+  so paired significance tests are not possible; the reported intervals are
+  percentile bootstrap over specifications.
 
 ## Limitations
 

@@ -219,9 +219,11 @@ Not yet supported — a general claim about CNNs versus GNNs. Outstanding:
 
 - neither model is tuned; an equal tuning budget could move both
 - single training seed and single sampling-seed schedule
-- the holdout is IID-like, so this measures in-distribution performance
 - the base-96 raster checkpoint was resumed mid-run with a reset optimizer, so
   it is a capacity probe rather than a clean architecture ablation
+
+That comparison is in-distribution. Under a family holdout the ranking reverses
+— see [Generalization](#generalization-holding-out-an-entire-family) below.
 
 ### Reproduce
 
@@ -231,6 +233,66 @@ COMP2D_SAMPLE_PRECISION=fp32 python scripts/eval_graph.py \
     --ckpt runs/v1graph_128/ckpt_final.pt --out runs/v1graph_128_eval \
     --n-specs 60 --K 8 --steps 50 --cfg 1.0 --workers 8
 ```
+
+## Generalization: holding out an entire family
+
+The comparison above is in-distribution — every mechanism type in the test set
+also appears in training, which measures interpolation and is the setting a
+large convolutional model should be expected to win.
+
+To test the representation argument, **one entire family (`fact_rotation`,
+`fact_translation`) was removed from training** and both models were retrained
+from scratch on the reduced corpus at the same matched exposure of 2.56M
+examples. Scored on 200 held-out specifications from that family, K = 8, same
+seeds and same FEA gate; the native-reference self-check passes 200/200.
+
+| method | pass@1 | pass@8 |
+|---|---:|---:|
+| `reference_native` (self-check) | 1.000 | 1.000 |
+| `raster_raw` / `raster_projected` | 0.060 [0.030, 0.095] | 0.180 [0.130, 0.235] |
+| `graph_raw` | 0.000 [0.000, 0.000] | 0.015 [0.000, 0.035] |
+| `graph_repaired` | 0.110 [0.070, 0.155] | **0.400** [0.335, 0.470] |
+
+**The ranking reverses**: out of distribution the graph pipeline more than
+doubles the raster model, with disjoint bootstrap intervals.
+
+Because both types also appear in the in-distribution test set, the same types
+can be compared with and without the family in training:
+
+| type / model | in-distribution (n=15) | family held out (n=100) |
+|---|---:|---:|
+| `fact_rotation`, raster | 1.00 | 0.33 |
+| `fact_rotation`, graph_repaired | 0.20 | 0.12 |
+| `fact_translation`, raster | 1.00 | **0.03** |
+| `fact_translation`, graph_repaired | 0.67 | **0.68** |
+
+The raster model does not degrade gracefully — on `fact_translation` it falls
+from solving every specification to three in a hundred, while the graph pipeline
+is statistically unchanged. The in-distribution cells are n = 15 and their 1.00s
+carry wide binomial intervals, but the collapse to 3/100 is far outside any of
+them.
+
+The failure modes say why. `geometry` — connectivity, volume fraction, gray
+fraction, minimum feature size — is the gate's check that a candidate is a valid
+shape at all. Out of distribution the raster model fails it on 1432 of 1600
+candidates (90%), emitting density fields that are not coherent structures. For
+`graph_repaired` it does not reach the top five causes; its failures are
+functional (`signed_ga`, `port_interface`, `minimum_output_stroke`). The decoder
+builds a connected strut network by construction, so the graph pipeline produces
+well-formed mechanisms that do the wrong thing, rather than non-mechanisms.
+
+**The honest reading.** `graph_raw` is near zero in both settings (0.015 held
+out, 0.040 in distribution), so what survives the holdout is mostly the
+representation and its deterministic decoder, not the learned model — and a
+hand-written decoder has no training distribution to leave. The defensible claim
+is about the pipeline: binding a generative model to a representation that can
+only express valid structures buys substantial out-of-distribution robustness.
+The claim that the GNN itself generalizes better than the CNN is not supported
+by these numbers.
+
+This is one held-out family, one training seed, one sampling schedule. Per-
+specification per-method outcomes are not stored in the result artifact, so no
+paired test is possible; the disjoint bootstrap intervals are the evidence.
 
 ## Usage
 
