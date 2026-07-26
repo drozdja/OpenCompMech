@@ -1,6 +1,6 @@
 """NUMA-aware CPU affinity + threading helpers for parallel dataset generation.
 
-The COMP2D generators run many INDEPENDENT, single-threaded sparse-FEA
+The OpenCompMech generators run many independent, single-threaded sparse-FEA
 optimizations in parallel (one per pool worker). The solve is a sparse-direct
 factorization that is memory-bandwidth bound, so on a multi-NUMA host the right
 policy is:

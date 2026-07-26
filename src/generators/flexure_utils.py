@@ -28,12 +28,11 @@ def _fit_points_to_domain(
     """Uniformly upscale + re-place a joint set so its bbox spans a healthy
     fraction of the domain.
 
-    User eyeball 2026-07-16: many rr_four_bar/rr_slider_crank samples were
-    tiny linkages lost in an empty domain (footprint down to 0.36 of the
-    domain side). Tiny mechanisms waste conditioning-raster resolution and
-    make the dataset's scale distribution erratic. Uniform scaling preserves
-    all link-length RATIOS, transmission angles, and direction vectors, so
-    the sampled kinematics stay valid.
+    Manual review found that many linkage samples were small relative to the
+    domain. Tiny mechanisms waste conditioning-raster resolution and make the
+    dataset's scale distribution erratic. Uniform scaling preserves all
+    link-length ratios, transmission angles and direction vectors, so the
+    sampled kinematics stay valid.
 
     Geometry already >= min_frac is returned unchanged (scale 1.0) to keep
     the sampler's native placement diversity.
@@ -108,4 +107,3 @@ def _draw_flexure_link(
     if neck_at_p1:
         _draw_thick_line(density, b, p1, width=neck_hw, value=1.0)
     _draw_thick_line(density, a, b, width=link_hw, value=1.0)
-

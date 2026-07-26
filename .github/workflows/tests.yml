@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
+  core:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -36,3 +36,22 @@ jobs:
 
       - name: Quickstart example
         run: python examples/quickstart.py
+
+  full:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[graph,viz,dev]"
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Full CPU test suite
+        run: pytest tests/ -q

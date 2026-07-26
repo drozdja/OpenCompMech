@@ -2109,8 +2109,8 @@ def generate_random_mechanism(
 
     # 'amplify' REMOVED 2026-07-15: it delegated to the amplifier, whose
     # floating-translator degeneracy is unsolved (0% yield — docs/DATASET.md
-    # §5.9). Overnight n=100 audit showed the amplify branch was pure waste
-    # (~1/3 of random samples, all gate-rejected). Restore only when the
+    # §5.9). An n=100 validation audit found that every sample from the amplify
+    # branch was gate-rejected. Restore only when the
     # amplifier archetype works (likely via Family E, not SIMP).
     archetype = np.random.choice(['invert', 'redirect'])
 

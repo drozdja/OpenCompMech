@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Generate seeded mechanism (Tier 2) samples for COMP2D dataset.
+Generate linkage-seeded mechanism samples for OpenCompMech.
 
 Uses linkage seeds (four-bar, slider-crank) to initialize topology optimization.
-This is the Phase B1 replacement for the old uniform-init generate_mech.py.
 
 Usage:
     # Quick test (10 samples, with visualization)
@@ -12,7 +11,7 @@ Usage:
     # Test specific linkage type
     python scripts/generate_mech_seeded.py --n-samples 20 --linkage-type four_bar --output-dir data/test_4bar
 
-    # Production run (6 workers overnight on HX99G)  
+    # Example multi-worker run
     python scripts/generate_mech_seeded.py --n-samples 1000 --workers 6 --output-dir data/shards/mech_seeded
 
     # With physics fields for dataset
@@ -319,7 +318,7 @@ def save_sample(sample: dict, output_dir: str):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Generate seeded mechanism samples (Phase B1)'
+        description='Generate linkage-seeded mechanism samples'
     )
     parser.add_argument('--n-samples', type=int, default=10)
     parser.add_argument('--resolution', type=int, default=64)

@@ -1,5 +1,5 @@
 """
-WebDataset-style tar shard I/O for COMP2D dataset.
+WebDataset-style tar shard I/O for OpenCompMech.
 
 Avoids filesystem inode exhaustion by batching samples into tar archives.
 Each shard contains ~1000 samples with consistent naming.

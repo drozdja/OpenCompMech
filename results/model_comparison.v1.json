@@ -1,0 +1,88 @@
+{
+  "format": "opencompmech.public-model-comparison.v1",
+  "protocol_sha256": "03caf1a5c4953ad39b43d18035ca3d872f1ead579fdd750c26a29a7efb750006",
+  "metric": "fraction of specifications with at least one FEA-verified candidate",
+  "confidence_interval": "95% percentile bootstrap over specifications",
+  "experiments": {
+    "in_distribution": {
+      "n_specs": 200,
+      "candidates_per_spec": 8,
+      "training_exposure": {
+        "raster_examples_million": 2.56,
+        "graph_examples_million": 2.56
+      },
+      "methods": {
+        "reference_native": {
+          "pass_at_1": [1.0, 1.0, 1.0],
+          "pass_at_8": [1.0, 1.0, 1.0]
+        },
+        "raster_raw": {
+          "pass_at_1": [0.72, 0.655, 0.775],
+          "pass_at_8": [0.905, 0.86, 0.945]
+        },
+        "raster_projected": {
+          "pass_at_1": [0.72, 0.655, 0.775],
+          "pass_at_8": [0.905, 0.86, 0.945]
+        },
+        "graph_raw": {
+          "pass_at_1": [0.005, 0.0, 0.015],
+          "pass_at_8": [0.04, 0.015, 0.07]
+        },
+        "graph_repaired": {
+          "pass_at_1": [0.11, 0.065, 0.15],
+          "pass_at_8": [0.335, 0.27, 0.4]
+        }
+      }
+    },
+    "family_holdout": {
+      "held_out_types": ["fact_rotation", "fact_translation"],
+      "n_specs": 200,
+      "candidates_per_spec": 8,
+      "training_exposure": {
+        "raster_examples_million": 2.56,
+        "graph_examples_million": 2.56
+      },
+      "methods": {
+        "reference_native": {
+          "pass_at_1": [1.0, 1.0, 1.0],
+          "pass_at_8": [1.0, 1.0, 1.0]
+        },
+        "raster_raw": {
+          "pass_at_1": [0.06, 0.03, 0.095],
+          "pass_at_8": [0.18, 0.13, 0.235]
+        },
+        "raster_projected": {
+          "pass_at_1": [0.06, 0.03, 0.095],
+          "pass_at_8": [0.18, 0.13, 0.235]
+        },
+        "graph_raw": {
+          "pass_at_1": [0.0, 0.0, 0.0],
+          "pass_at_8": [0.015, 0.0, 0.035]
+        },
+        "graph_repaired": {
+          "pass_at_1": [0.11, 0.07, 0.155],
+          "pass_at_8": [0.4, 0.335, 0.47]
+        }
+      },
+      "pass_at_8_by_type": {
+        "fact_rotation": {
+          "raster_raw": 0.33,
+          "graph_repaired": 0.12,
+          "n": 100
+        },
+        "fact_translation": {
+          "raster_raw": 0.03,
+          "graph_repaired": 0.68,
+          "n": 100
+        }
+      }
+    }
+  },
+  "limitations": [
+    "One training seed and one sampling schedule per experiment.",
+    "Neither model received a tuning budget.",
+    "The corpus and model checkpoints are not distributed in this repository.",
+    "The in-distribution raster checkpoint was resumed with a reset optimizer.",
+    "Per-specification paired outcomes were not retained."
+  ]
+}

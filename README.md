@@ -1,33 +1,47 @@
 # OpenCompMech
 
-Research code for **generating 2D compliant mechanisms and verifying them with
-finite-element analysis**. The organising principle is that a generated design
-counts for nothing until a fresh FEA solve says it actually works — so every
-number here comes from a solver, never from similarity to a training example.
+An active research project for building a **diverse, physics-labelled dataset
+of 2D compliant mechanisms** for conditional generative modelling. Each sample
+couples a material layout with its boundary-value problem and finite-element
+response, so a model can learn relationships between material placement,
+loading and mechanism behaviour rather than geometry alone.
 
-> **Status: work in progress.** The generation pipeline, the FEA verifier, the
-> graph representation and the evaluation protocol are implemented and tested.
-> Model comparisons are reported under a frozen protocol, but from a **single
-> training seed on a synthetic corpus** — they characterise these two models on
-> this data, and are not a benchmark result for CNNs versus GNNs in general. See
-> [Evaluation status](#evaluation-status) and
-> [What this does not yet establish](#what-this-does-not-yet-establish).
+> **Status: work in progress.** Dataset generation, FEA labelling, validation,
+> raster baselines and an experimental graph representation are implemented.
+> The corpus still has uneven family coverage and mostly one solution per
+> specification; it is not yet ready for a public dataset release. Current
+> neural-network results are early baselines, not the project objective.
 
 ## What this is
 
-A pipeline for building a corpus of 2D compliant mechanisms across five
-generator families, and for asking whether a conditional generative model can
-propose candidate topologies that survive an independent physics check.
+Public compliant-mechanism datasets with complete boundary conditions and FEA
+solutions are difficult to find. OpenCompMech addresses that missing
+infrastructure by generating mechanisms from several construction and topology
+optimisation families and storing a common learning contract:
+
+- topology and design envelope;
+- support degrees of freedom;
+- input and output ports, directions, forces and springs;
+- displacement, stress and strain-energy fields;
+- functional and geometric validation results;
+- lineage needed for leakage-resistant train/test splits.
 
 Everything is **normalized 2D linear elasticity**. It is not a manufacturing
 dataset, not a validated engineering tool, and makes no claim about any physical
-part.
+part. The longer-term goal is a generator that proposes useful topologies for
+specified supports and input/output behaviour. The present dataset is an
+intermediate step toward that goal.
 
 ## What is here
 
-**The verification gate is the product.** Most generative-design work reports
-similarity to a reference. Here a candidate must pass a full-resolution sparse
-FEA screen: connectivity, minimum feature size, no single-pixel hinges, volume
+**Corpus generation.** `src/generators/` contains parametric, linkage,
+ground-structure and topology-optimisation generators behind one record schema.
+The dataset tooling tracks specifications and lineage, audits split leakage and
+supports quality/diversity curation. See [docs/DATASET.md](docs/DATASET.md).
+
+**FEA labels and acceptance gate.** Every candidate is solved independently and
+must pass a full-resolution sparse FEA
+screen: connectivity, minimum feature size, no single-pixel hinges, volume
 fraction, port attachment, and functional response (does it actually move the
 right way, with the right sign and enough stroke). See
 [docs/VERIFICATION_PROTOCOL.md](docs/VERIFICATION_PROTOCOL.md).
@@ -36,16 +50,23 @@ right way, with the right sign and enough stroke). See
 one canonical graph from the *finished shape* of any mechanism, so all five
 families share a single schema. It is SE(2)-equivariant, round-trips back to a
 raster for re-verification, and includes an ETNN-style combinatorial-complex
-lift (rank-2 cells for holes and anchor pads) validated against Euler's formula.
+lift (rank-2 cells for holes and anchor pads). The rank-2 lift satisfied Euler's
+formula on 200 real designs across five families without a tuned threshold, and
+SE(2) equivariance was verified to `1e-9` in float64.
 See [docs/GRAPH_REPRESENTATION.md](docs/GRAPH_REPRESENTATION.md).
 
-**Measured ceilings before model claims.** Before judging any generator, the
+**Representation ceilings.** Before judging any generator, the
 pipeline measures what its *representation* can express at all, by pushing
 ground-truth designs through the encoder and back and gating the result
 (`scripts/graph_ceiling.py`). On this project that ceiling — not the model — was
 repeatedly the binding constraint.
 
-**Hard-won hardware notes.** Two silent-corruption failure modes on RDNA4
+**Early model baselines.** A raster rectified-flow model and an EGNN-based graph
+model are evaluated under the same frozen specifications and independent FEA
+gate. The comparison is a diagnostic of the current dataset and
+representations, not a general CNN-versus-GNN benchmark.
+
+**Hardware reliability notes.** Two silent-corruption failure modes on RDNA4
 (gfx1201), including fused AdamW producing negative second moments, with fixes:
 [docs/HARDWARE_NOTES_RDNA4.md](docs/HARDWARE_NOTES_RDNA4.md).
 
@@ -71,7 +92,8 @@ No corpus, GPU or trained model is needed to try the graph representation:
 ```bash
 pip install -e ".[graph,viz,dev]"
 python examples/quickstart.py        # raster -> graph -> ETNN cells -> raster
-pytest tests/ -q                     # the suite runs on CPU
+pytest tests/test_mech_graph.py tests/test_mech_complex.py \
+       tests/test_graph_tensors.py -q
 ```
 
 ![quickstart: raster to graph to rank-2 cells and back](docs/img/quickstart.png)
@@ -90,12 +112,19 @@ assert euler_check(g)["ok"]                                # bounded faces = E-V
 data = to_pyg(g)          # torch_geometric Data, or a tensor dict without it
 ```
 
-Training and evaluation additionally need PyTorch (`pip install -e ".[ml]"`,
-with a build matching your accelerator) and a generated corpus.
+Training and evaluation additionally need PyTorch, with a build matching the
+target machine. After installing it, the full test suite runs on CPU:
+
+```bash
+pip install -e ".[ml]"
+pytest tests/ -q
+```
 
 ## Evaluation status
 
-A comparison of the raster (CNN) and graph (GNN) models has been run through
+These results are early baselines used to expose weaknesses in the corpus,
+representation and decoding pipeline. A comparison of the raster (CNN) and
+graph (GNN) models has been run through
 `scripts/compare_models.py`, which drives both models so that specifications,
 candidate count, seed schedule and FEA gate are identical by construction.
 Specifications come from a frozen protocol artifact
@@ -114,6 +143,9 @@ specs.
 | `raster_projected` | 0.720 [0.655, 0.775] | **0.905** [0.860, 0.945] |
 | `graph_raw` | 0.005 [0.000, 0.015] | 0.040 [0.015, 0.070] |
 | `graph_repaired` | 0.110 [0.065, 0.150] | **0.335** [0.270, 0.400] |
+
+The aggregate data behind both comparison tables is stored in
+[`results/model_comparison.v1.json`](results/model_comparison.v1.json).
 
 Three things worth stating plainly:
 
@@ -198,12 +230,32 @@ buys real out-of-distribution robustness. See
   weighted toward the larger families.
 - **One solution per specification.** Per-spec multimodality is unsolved, so the
   corpus cannot currently teach a model that a problem has several good answers.
+- **Planned MMC coverage is absent.** The intended moving-morphable-components
+  generator family has not yet contributed a production corpus.
+- **The learned graph generator is weak.** `graph_raw` pass rates are
+  0.015--0.040, and most of the graph pipeline's accepted output comes from
+  deterministic decoder repair.
+- **A medial-axis strut graph is not universal.** Its reconstruction ceiling is
+  zero for several continuum/SIMP mechanism types, including the current
+  gripper and inverter families.
 - **Goal-conditioned, not pure inverse design.** The conditioning vector
   includes performance labels measured from a reference design.
 - **The corpus is not distributed here.** Design counts quoted in the docs refer
   to a corpus generated by this code; note that unique *records* and unique
   *binarised topologies* are not identical (a small number of designs collide
   after binarisation).
+
+## Roadmap
+
+The next dataset milestones are:
+
+1. generate multiple distinct valid topologies for the same specification;
+2. improve coverage and balance across generator families, including MMC;
+3. treat accessible input/output interfaces as an explicit dataset axis;
+4. add large-displacement nonlinear evaluation and richer prescribed output
+   paths;
+5. publish a versioned corpus, protocol and data card once those checks are
+   complete.
 
 ## License
 

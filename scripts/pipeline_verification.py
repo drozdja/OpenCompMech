@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pipeline Verification Script for COMP2D Dataset Generation
+Pipeline verification for OpenCompMech dataset generation.
 
 Runs all 5 phases of stress testing before production:
 1. Physics & Coordinates Integrity Test
@@ -1327,16 +1327,16 @@ def run_all_phases(output_dir: Path):
     
     print("\n" + "="*60)
     if all_passed:
-        print("🚀 ALL TESTS PASSED - READY FOR PRODUCTION")
+        print("ALL TESTS PASSED - READY FOR PRODUCTION")
     else:
-        print("❌ SOME TESTS FAILED - FIX BEFORE PRODUCTION")
+        print("SOME TESTS FAILED - FIX BEFORE PRODUCTION")
     print("="*60)
     
     # Create summary image
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.axis('off')
     
-    text = "COMP2D PIPELINE VERIFICATION SUMMARY\n"
+    text = "OPENCOMPMECH PIPELINE VERIFICATION SUMMARY\n"
     text += "="*40 + "\n\n"
     
     for name, passed in results.items():
@@ -1344,7 +1344,7 @@ def run_all_phases(output_dir: Path):
         text += f"  {status}  {name}\n"
     
     text += "\n" + "="*40 + "\n"
-    text += "🚀 READY FOR PRODUCTION" if all_passed else "❌ FIX ISSUES"
+    text += "READY FOR PRODUCTION" if all_passed else "FIX ISSUES"
     
     ax.text(0.5, 0.5, text, ha='center', va='center', fontsize=12, family='monospace',
             transform=ax.transAxes,

@@ -1,6 +1,6 @@
-"""Family E: rigid-body replacement — compliant mechanisms BY CONSTRUCTION.
+"""Rigid-body replacement with compliant flexure joints.
 
-Instead of topology optimization (Family A / SIMP), sample a rigid linkage with
+Instead of topology optimization, sample a rigid linkage with
 known-good kinematics (reusing the samplers in seeds.py) and substitute every
 revolute joint with a short thin flexure neck (pseudo-rigid-body model, Howell):
 
@@ -12,8 +12,8 @@ revolute joint with a short thin flexure neck (pseudo-rigid-body model, Howell):
 No optimizer, no degenerate basins: one construction + one FEA labeling solve
 per sample (~seconds vs ~minutes for SIMP). Kinematics (I/O directions,
 transmission angle, Grashof) are inherited from the linkage sampler, so the
-output direction is correct by construction. See EXECUTION_PLAN.md Phase H and
-docs/DATASET.md (generator families and type distinctness).
+output direction is correct by construction. See docs/DATASET.md for generator
+families and type distinctness.
 
 Stiffness contrast is the design rule: bending stiffness ~ w^3, so 7 px links
 vs 3 px necks gives ~13x contrast — links act rigid, necks act as pivots.

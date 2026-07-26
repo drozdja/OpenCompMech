@@ -183,11 +183,11 @@ def guided_sample(model, obj, cond, scal, fea, fixed, probe, direction, scale,
     null_scal = torch.zeros_like(scal) if use_cfg else None
     # Sampling precision. Default bf16 (fast, fine at 64px). gfx1201/RDNA4 has
     # broken half-precision conv kernels that NaN at 128px, so set
-    # COMP2D_SAMPLE_PRECISION=fp32 there (fp32 => no autocast). See
+    # OPENCOMPMECH_SAMPLE_PRECISION=fp32 there (fp32 => no autocast). See
     # scripts/train_pilot.py --precision for the same rationale on the train side.
     import os
     import contextlib
-    _prec = os.environ.get("COMP2D_SAMPLE_PRECISION", "bf16")
+    _prec = os.environ.get("OPENCOMPMECH_SAMPLE_PRECISION", "bf16")
     _fp32 = _prec == "fp32"
     _amp_dtype = torch.float16 if _prec == "fp16" else torch.bfloat16
     for i in range(steps):

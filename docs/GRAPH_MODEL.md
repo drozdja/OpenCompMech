@@ -228,7 +228,7 @@ That comparison is in-distribution. Under a family holdout the ranking reverses
 ### Reproduce
 
 ```bash
-COMP2D_SAMPLE_PRECISION=fp32 python scripts/eval_graph.py \
+OPENCOMPMECH_SAMPLE_PRECISION=fp32 python scripts/eval_graph.py \
     --graphs data/v1_graph_128 --cache data/v1_broad_cache_128 \
     --ckpt runs/v1graph_128/ckpt_final.pt --out runs/v1graph_128_eval \
     --n-specs 60 --K 8 --steps 50 --cfg 1.0 --workers 8

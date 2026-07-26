@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Backfill <prefix>.cond_energy.npy for samples generated before the
-conditioning field existed (Phase J; added 2026-07-17, pilot_v1 ran without).
+conditioning field was added.
 
 The field is derivable from the problem spec alone, and the problem is
 reconstructible from (problem_type, sample_id): production seeds every sample

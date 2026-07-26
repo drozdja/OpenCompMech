@@ -52,8 +52,8 @@ RR_TYPES = {"rr_four_bar", "rr_slider_crank", "rr_lever", "rr_compound_lever",
 
 GINI_MIN = 0.5        # strain-energy localization threshold (distributed flexure)
 GINI_CAP = 0.75       # upper bound: gini > cap = lumped blob-with-tail pseudo-
-                      # mechanism (user eyeball of overnight_20260715: flagged
-                      # samples at 0.77-0.95, honest passers ~0.4-0.7)
+                      # mechanism (manual validation review found flagged
+                      # samples at 0.77-0.95, accepted samples ~0.4-0.7)
 TRANSMISSION_MIN = 1.0  # |u_out| floor for a meaningful mechanism
 
 
@@ -206,7 +206,7 @@ def run_case(task):
 
         # Decisive physical defects: single-pixel point hinge (FEA-invalidating,
         # unmanufacturable) and lumped compliance (gini > GINI_CAP = blob-with-
-        # tail pseudo-mechanism; user eyeball 2026-07-15). A 2px flexure is
+        # tail pseudo-mechanism, established by manual review). A 2px flexure is
         # legitimate, so survives_erosion stays a reported metric, not a fail.
         #
         # Family E exception (kind == 'construct'): flexure linkages localize
@@ -246,20 +246,19 @@ def run_case(task):
         rigid_resid = _rigid_residual(cxq + 0.5, cyq + 0.5,
                                       uxc_q[solid_q], uyc_q[solid_q])
 
-        # port exposure: clear external interface vs embedded in the structure
-        # (user request 2026-07-16; reported, NOT gated)
+        # Port exposure: clear external interface vs embedded in the structure.
+        # Reported, not gated.
         from src.validation.ports import problem_port_exposure
         pexp = problem_port_exposure(density, problem)
 
-        # footprint: solid bbox extent as a fraction of the domain side —
-        # catches tiny mechanisms lost in an empty domain (user eyeball
-        # 2026-07-16 on rr_four_bar; reported, NOT gated)
+        # Footprint: solid bbox extent as a fraction of the domain side. This
+        # catches tiny mechanisms lost in an empty domain; reported, not gated.
         fy, fx = np.where(density > 0.5)
         footprint = float(max((fx.max() - fx.min()) / res,
                               (fy.max() - fy.min()) / res)) if fx.size else 0.0
 
-        # port compliance selectivity: parasitic-compliance signal the working
-        # solve can't see (user question 2026-07-17; reported, NOT gated)
+        # Port compliance selectivity: parasitic-compliance signal the working
+        # solve cannot see; reported, not gated.
         from src.validation.compliance import port_selectivity
         psel = port_selectivity(problem, density)
         sel_out = psel.get("output", {})

@@ -30,7 +30,7 @@ overflow. Disabling MIOpen implicit-GEMM does not help.
 
 ```bash
 python scripts/train_pilot.py --precision fp32     # disables autocast
-COMP2D_SAMPLE_PRECISION=fp32 python scripts/eval_graph.py ...
+OPENCOMPMECH_SAMPLE_PRECISION=fp32 python scripts/eval_graph.py ...
 ```
 
 64px was unaffected and can stay in bf16.

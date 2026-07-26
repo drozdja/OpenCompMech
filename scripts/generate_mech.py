@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate mechanism (Tier 2) samples for COMP2D dataset.
+Generate mechanism samples for OpenCompMech.
 
 Usage:
     # Quick test (10 samples, no physics)
@@ -66,8 +66,8 @@ GA_FLOOR = {
 # to the applied force). Lenient — lever mechanisms legitimately reach ~0.6 —
 # so this only catches degenerate cases where the input barely moves on-axis.
 OFF_AXIS_CAP = 0.70
-# Strain-energy Gini cap: user eyeball review of the 2026-07-15 overnight batch
-# (n=100-200/type) found that gate-passing samples with gini > ~0.75 are
+# Strain-energy Gini cap: manual review of a validation batch (n=100-200/type)
+# found that gate-passing samples with gini > ~0.75 are
 # "blob with a floppy tail" pseudo-mechanisms (lumped compliance) — every
 # flagged sample had gini 0.77-0.95 while genuinely articulated passers sit at
 # ~0.4-0.7. Costs <=3.5 yield pts on most types (slider -10.5, honestly so).
@@ -159,8 +159,8 @@ def compute_quality_metrics(problem, density):
 
 
 def compute_conditioning_field(problem, uniform_vf, resolution):
-    """Phase J conditioning input: per-element strain-energy raster of the
-    UNIFORM-density domain under the sample's exact BCs/loads/springs.
+    """Per-element strain-energy raster of the uniform-density domain under
+    the sample's exact boundary conditions, loads and springs.
 
     This is the "where do load paths want to run BEFORE any material layout
     exists" channel for the conditional generative model: it is computable
@@ -361,7 +361,7 @@ def generate_single_sample(
             is_valid = False
             validation_info['failure_reason'] = 'off_axis_input'
         elif (not is_constructed) and q_gini > GINI_CAP:
-            # Lumped blob-with-tail pseudo-mechanism (user eyeball 2026-07-15)
+            # Lumped blob-with-tail pseudo-mechanism.
             is_valid = False
             validation_info['failure_reason'] = 'lumped_compliance'
     validation_info['quality'] = {
@@ -393,15 +393,15 @@ def generate_single_sample(
     if is_valid and not interface_ok and os.environ.get("MECH_STRICT_PORT_ACCESS", "") == "1":
         is_valid = False
         validation_info['failure_reason'] = 'port_not_accessible'
-    # Footprint: solid bbox extent / domain side (tiny-mechanism indicator,
-    # user eyeball 2026-07-16). Reported, not gated.
+    # Footprint: solid bbox extent / domain side (tiny-mechanism indicator).
+    # Reported, not gated.
     _fy, _fx = np.where(result.density > 0.5)
     validation_info['footprint'] = (
         float(max((_fx.max() - _fx.min()) / result.density.shape[1],
                   (_fy.max() - _fy.min()) / result.density.shape[0]))
         if _fx.size else 0.0)
     # Port compliance selectivity: the parasitic-compliance signal the single
-    # working-load solve can't see (user question 2026-07-17). One reduced-K
+    # working-load solve cannot see. One reduced-K
     # factorization reused for unit-load probes at both ports. Reported, NOT
     # gated (the dataset wants a RANGE of selectivity as a conditioning axis).
     if is_valid:
@@ -452,7 +452,7 @@ def generate_single_sample(
             is_valid = False
             validation_info['failure_reason'] = 'physics_error'
 
-    # Phase J conditioning field: uniform-domain strain-energy raster.
+    # Conditioning field: uniform-domain strain-energy raster.
     # Derivable from the problem spec alone => valid conditioning input at
     # inference time. Saved as <prefix>.cond_energy.npy for valid samples.
     conditioning_field = None
@@ -546,7 +546,7 @@ def worker_generate(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Generate mechanism samples for COMP2D dataset'
+        description='Generate mechanism samples for OpenCompMech'
     )
     parser.add_argument('--n-samples', type=int, default=10,
                         help='Number of samples to generate')

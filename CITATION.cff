@@ -5,7 +5,8 @@ message: >-
   If you use this software, please cite it using the metadata from this file.
 type: software
 authors:
-  - name: OpenCompMech Contributors
+  - family-names: Drozd
+    given-names: Jan
 repository-code: "https://github.com/drozdja/opencompmech"
 abstract: >-
   Research code for generating 2D compliant mechanisms across five generator
