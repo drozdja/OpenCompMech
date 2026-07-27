@@ -162,6 +162,25 @@ Three things worth stating plainly:
    families, where a mechanism is a distributed compliant body rather than a
    network of struts. See [docs/GRAPH_MODEL.md](docs/GRAPH_MODEL.md).
 
+### After equal-budget tuning
+
+Both models were then given an identical search budget — the same 3 x 3 grid of
+guidance scale and sampling steps — on the tuning split, each free to pick its
+own optimum. `cfg = 2.0` won for both; the sampling-steps axis was flat. Run on
+the test split over three sampling seeds (n = 200, K = 8, mean +- sd):
+
+| method | pass@8 |
+|---|---:|
+| `raster_projected` | 0.918 +- 0.008 |
+| `graph_raw` | 0.065 +- 0.020 |
+| `graph_repaired` | 0.402 +- 0.008 |
+
+Sampling-seed variance is small (sd ~0.01), so the in-distribution gap is not a
+sampling artifact. Doubling sampling steps from 50 to 100 changes pass@8 by less
+than the seed noise for both models, so the cheaper setting is the right
+operating point. Tuning does not reduce the graph pipeline's repair dependence:
+`graph_raw` stayed between 0.01 and 0.05 at all nine grid points.
+
 ### A corrected error
 
 An earlier internal write-up claimed the opposite — that the graph model beat the
@@ -182,17 +201,22 @@ So one entire family was **removed from training** and both models were
 retrained from scratch on the reduced corpus at the same matched exposure, then
 scored on 200 held-out specifications from the unseen family.
 
-| method | pass@1 | pass@8 |
+| method | untuned pass@8 | tuned (cfg 2.0) pass@8 |
 |---|---:|---:|
 | `reference_native` (self-check) | 1.000 | 1.000 |
-| `raster_raw` / `raster_projected` | 0.060 [0.030, 0.095] | 0.180 [0.130, 0.235] |
-| `graph_raw` | 0.000 [0.000, 0.000] | 0.015 [0.000, 0.035] |
-| `graph_repaired` | 0.110 [0.070, 0.155] | **0.400** [0.335, 0.470] |
+| `raster_raw` / `raster_projected` | 0.180 [0.130, 0.235] | 0.150 [0.105, 0.200] |
+| `graph_raw` | 0.015 [0.000, 0.035] | 0.040 [0.015, 0.070] |
+| `graph_repaired` | **0.400** [0.335, 0.470] | **0.525** [0.455, 0.590] |
 
 On an unseen family the graph pipeline more than doubles the raster model, with
-disjoint intervals. Per type, with and without the family in training, the
-raster model falls from 1.00 to 0.03 on `fact_translation` while the graph
-pipeline is statistically unchanged (0.67 to 0.68). The failure modes explain
+disjoint intervals — and the gap widens to 3.5x once both are tuned. The
+guidance scale chosen on the in-distribution tuning split transfers to the
+unseen family for the graph model (+0.125) but not for the raster model
+(-0.030, within noise).
+
+Per type, with and without the family in training, the raster model falls from
+1.00 to 0.03 on `fact_translation` while the graph pipeline is statistically
+unchanged (0.67 to 0.68), reaching 0.80 when tuned. The failure modes explain
 it: 90% of raster candidates fail the gate's basic *geometry* check — they are
 not coherent structures — whereas the graph decoder builds a connected strut
 network by construction and fails instead on *function*.
@@ -206,11 +230,14 @@ buys real out-of-distribution robustness. See
 
 ### What this does not yet establish
 
-- Neither model is tuned. Equal *tuning budgets* (both zero here) make the
-  comparison fair, but the absolute numbers are not near a ceiling.
-- Single training seed and single sampling-seed schedule, and one held-out
-  family. The direction of the generalization result is clear; its magnitude
-  rests on one experiment.
+- Tuning covered inference only (guidance scale, sampling steps) under an equal
+  budget. Neither model's *training* hyperparameters were searched, so the
+  absolute numbers are not near a ceiling.
+- **Single training seed.** Sampling-seed variance is measured and small
+  (sd ~0.01), but training-seed variance is not measured at all — at 28.7 h per
+  raster run it was out of budget. This is the largest open caveat.
+- One held-out family, scored at a single sampling seed. The direction of the
+  generalization result is clear; its magnitude rests on one experiment.
 - The raster checkpoint in the in-distribution table was resumed mid-run with a
   reset optimizer, making it a capacity probe rather than a clean architecture
   ablation. The holdout checkpoints were trained straight through.

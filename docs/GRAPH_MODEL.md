@@ -215,10 +215,21 @@ Supported: at matched data exposure and equal (zero) tuning, on this corpus, the
 raster model is substantially better overall, and the graph representation is
 viable only for strut-like mechanism families.
 
+Both models were subsequently tuned under an identical inference budget (a 3 x 3
+grid over guidance scale and sampling steps, on the tuning split, each free to
+pick its own optimum). `cfg = 2.0` won for both and the sampling-steps axis was
+flat. Over three sampling seeds on the test split, pass@8 becomes 0.918 +- 0.008
+(raster) against 0.402 +- 0.008 (graph_repaired) — the ranking is unchanged and
+sampling-seed variance is an order of magnitude smaller than the gap. Tuning did
+not reduce the repair dependence: `graph_raw` stayed between 0.01 and 0.05 at
+all nine grid points.
+
 Not yet supported — a general claim about CNNs versus GNNs. Outstanding:
 
-- neither model is tuned; an equal tuning budget could move both
-- single training seed and single sampling-seed schedule
+- only inference was tuned; training hyperparameters were never searched
+- **single training seed.** Sampling-seed variance is measured and small; the
+  training-seed variance that would matter most is not measured at all, at 28.7 h
+  per raster run
 - the base-96 raster checkpoint was resumed mid-run with a reset optimizer, so
   it is a capacity probe rather than a clean architecture ablation
 
@@ -246,15 +257,20 @@ from scratch on the reduced corpus at the same matched exposure of 2.56M
 examples. Scored on 200 held-out specifications from that family, K = 8, same
 seeds and same FEA gate; the native-reference self-check passes 200/200.
 
-| method | pass@1 | pass@8 |
-|---|---:|---:|
-| `reference_native` (self-check) | 1.000 | 1.000 |
-| `raster_raw` / `raster_projected` | 0.060 [0.030, 0.095] | 0.180 [0.130, 0.235] |
-| `graph_raw` | 0.000 [0.000, 0.000] | 0.015 [0.000, 0.035] |
-| `graph_repaired` | 0.110 [0.070, 0.155] | **0.400** [0.335, 0.470] |
+| method | pass@1 | untuned pass@8 | tuned (cfg 2.0) pass@8 |
+|---|---:|---:|---:|
+| `reference_native` (self-check) | 1.000 | 1.000 | 1.000 |
+| `raster_raw` / `raster_projected` | 0.060 | 0.180 [0.130, 0.235] | 0.150 [0.105, 0.200] |
+| `graph_raw` | 0.000 | 0.015 [0.000, 0.035] | 0.040 [0.015, 0.070] |
+| `graph_repaired` | 0.110 | **0.400** [0.335, 0.470] | **0.525** [0.455, 0.590] |
 
 **The ranking reverses**: out of distribution the graph pipeline more than
-doubles the raster model, with disjoint bootstrap intervals.
+doubles the raster model, with disjoint bootstrap intervals, and the gap widens
+to 3.5x once both models are tuned under an equal budget. The guidance scale
+selected on the *in-distribution* tuning split transfers to the unseen family
+for the graph model (+0.125, about 3.5 standard errors) but not for the raster
+model (-0.030, within noise). No held-out data informed that choice, and the
+same value was applied to both models.
 
 Because both types also appear in the in-distribution test set, the same types
 can be compared with and without the family in training:
