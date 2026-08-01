@@ -28,6 +28,12 @@ repairs, which a single end-to-end number cannot.
 
 `reference_native` is carried through as the protocol self-check.
 
+With ``--graph-null-ablation``, the same graph noise is also sampled through
+the model's trained unconditional branch.  The resulting free graph is decoded
+against the *target* specification's anchors, domain and volume exactly like the
+conditioned sample.  This isolates learned specification-following from the
+validity supplied by the representation and deterministic reconstruction.
+
     python scripts/compare_models.py \
         --freeze data/eval_protocol/v1_128_frozen.json \
         --cache data/v1_broad_cache_128 --graphs data/v1_graph_128 \
@@ -69,7 +75,8 @@ from src.ml.unet import ConditionalUNet                                   # noqa
 from src.validation.connectivity import check_volume_fraction             # noqa: E402
 
 METHODS = ["reference_native", "raster_raw", "raster_projected",
-           "graph_raw", "graph_repaired"]
+           "graph_raw", "graph_repaired", "graph_null_raw",
+           "graph_null_repaired"]
 
 
 def anchor_roles_tensor(b, device):
@@ -120,6 +127,10 @@ def main():
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--protocol", default=None)
+    ap.add_argument(
+        "--graph-null-ablation", action="store_true",
+        help=("also sample the GNN's unconditional branch with identical noise; "
+              "decode it using the target spec's anchors/domain/volume"))
     args = ap.parse_args()
 
     out = Path(args.out)
@@ -247,6 +258,37 @@ def main():
                  reconstruct_valid(gk, target_vf=target_vf, domain_mask=dom,
                                    shape=shape, vf_fn=lambda m: vfn(m & dom)))
 
+            if args.graph_null_ablation:
+                # Reset to the same seed so conditioned and null samples start
+                # from identical node/edge noise. Null conditioning is the
+                # branch explicitly trained by classifier-free dropout.
+                null_gen = torch.Generator(device=args.device).manual_seed(seed)
+                graph_scal = torch.from_numpy(
+                    np.array(z["scalars"][gi])[None]).to(args.device)
+                graph_apos = torch.from_numpy(
+                    np.array(z["anchor_pos"][gi])[None]).to(args.device)
+                graph_avec = torch.from_numpy(
+                    np.array(z["anchor_vec"][gi])[None]).to(args.device)
+                graph_apres = torch.from_numpy(
+                    np.array(z["anchor_present"][gi])[None]).to(args.device)
+                with torch.no_grad():
+                    nnx, nex = graph_sample(
+                        gnn, torch.zeros_like(graph_scal),
+                        torch.zeros_like(graph_apos), torch.zeros_like(graph_avec),
+                        torch.zeros_like(graph_apres),
+                        anchor_roles_tensor(1, args.device),
+                        N_FREE, N_MAX, NODE_CH, EDGE_CH,
+                        steps=args.steps, cfg=1.0, generator=null_gen)
+                ng = decode(nnx.float().cpu().numpy()[0],
+                            nex.float().cpu().numpy()[0],
+                            z["anchor_pos"][gi], z["anchor_present"][gi],
+                            shape=shape)
+                push("graph_null_raw", k, to_raster(ng, shape=shape) & dom)
+                push("graph_null_repaired", k,
+                     reconstruct_valid(
+                         ng, target_vf=target_vf, domain_mask=dom, shape=shape,
+                         vf_fn=lambda m: vfn(m & dom)))
+
         if (ordinal + 1) % 20 == 0:
             print(f"[cmp] generated {ordinal+1}/{len(rows)} "
                   f"({time.time()-t0:.0f}s)", flush=True)
@@ -306,6 +348,12 @@ def main():
         "training_exposure": exposure,
         "summary": summary,
         "specs": specs,
+        "outcomes": {
+            str(row): {method: [bool(v) for v in values]
+                       for method, rows_by_method in passed.items()
+                       if (values := rows_by_method.get(row)) is not None}
+            for row in sorted({s["row"] for s in specs})
+        },
     }
     with (out / "comparison.json").open("w") as f:
         json.dump(payload, f, indent=2)

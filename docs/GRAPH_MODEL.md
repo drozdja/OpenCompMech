@@ -297,18 +297,24 @@ functional (`signed_ga`, `port_interface`, `minimum_output_stroke`). The decoder
 builds a connected strut network by construction, so the graph pipeline produces
 well-formed mechanisms that do the wrong thing, rather than non-mechanisms.
 
-**The honest reading.** `graph_raw` is near zero in both settings (0.015 held
-out, 0.040 in distribution), so what survives the holdout is mostly the
-representation and its deterministic decoder, not the learned model — and a
-hand-written decoder has no training distribution to leave. The defensible claim
-is about the pipeline: binding a generative model to a representation that can
-only express valid structures buys substantial out-of-distribution robustness.
-The claim that the GNN itself generalizes better than the CNN is not supported
-by these numbers.
+**Separating conditioning from reconstruction.** `graph_raw` is near zero in
+both settings, so reconstruction is clearly necessary. But it is not the whole
+result. The model's trained unconditional branch was sampled from identical
+noise and decoded with the target anchors, domain and volume. Its reconstructed
+pass@8 is 0.165, against 0.525 when conditioned. Paired over 200 specifications:
+both pass 28, conditioned only 77, null only 5, neither 90 (exact two-sided
+p = 1.2e-17). On `fact_translation`, conditioning changes pass@8 from 0.26 to
+0.80; on `fact_rotation`, from 0.07 to 0.25.
 
-This is one held-out family, one training seed, one sampling schedule. Per-
-specification per-method outcomes are not stored in the result artifact, so no
-paired test is possible; the disjoint bootstrap intervals are the evidence.
+The decoder therefore supplies a substantial validity floor, while learned
+specification-following supplies a large additional increment. The defensible
+claim is still about the complete pipeline, not a universal GNN advantage, but
+the earlier interpretation that the holdout result was mostly decoder behavior
+was too strong.
+
+This remains one held-out family and one training realization. Candidate-level
+per-specification outcomes are retained for the conditioning ablation, enabling
+the paired test above; controlled training-seed replication is the next check.
 
 ## Usage
 

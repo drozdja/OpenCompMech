@@ -221,11 +221,18 @@ it: 90% of raster candidates fail the gate's basic *geometry* check — they are
 not coherent structures — whereas the graph decoder builds a connected strut
 network by construction and fails instead on *function*.
 
-The honest caveat is that `graph_raw` is near zero in both settings, so what
-generalizes is largely the representation and its deterministic decoder rather
-than the learned model. The supported claim is about the pipeline: constraining
-a generative model to a representation that can only express valid structures
-buys real out-of-distribution robustness. See
+To separate learned conditioning from decoder validity, the GNN's trained
+unconditional branch was sampled from the **same noise draws**, then decoded
+with the target anchors, domain and volume. Conditioned `graph_repaired` reaches
+0.525 pass@8; null-conditioned reconstruction reaches only 0.165. Paired over
+200 specifications, conditioned-only passes 77, null-only passes 5, both pass
+28, and neither passes 90 (exact two-sided p = 1.2e-17). On
+`fact_translation`, conditioning raises pass@8 from 0.26 to 0.80.
+
+Thus reconstruction supplies a meaningful validity floor, but learned
+specification-following supplies a large additional gain. The supported claim
+remains about the pipeline: constraining a conditional generator to a structural
+representation buys out-of-distribution robustness. See
 [docs/GRAPH_MODEL.md](docs/GRAPH_MODEL.md).
 
 ### What this does not yet establish
@@ -233,17 +240,18 @@ buys real out-of-distribution robustness. See
 - Tuning covered inference only (guidance scale, sampling steps) under an equal
   budget. Neither model's *training* hyperparameters were searched, so the
   absolute numbers are not near a ceiling.
-- **Single training seed.** Sampling-seed variance is measured and small
-  (sd ~0.01), but training-seed variance is not measured at all — at 28.7 h per
-  raster run it was out of budget. This is the largest open caveat.
+- **Single training realization.** Sampling-seed variance is measured and small
+  (sd ~0.01), but training-seed variance is not measured. The original
+  checkpoints did not record an explicit training seed, so a controlled seeded
+  replication is required. This is the largest open caveat.
 - One held-out family, scored at a single sampling seed. The direction of the
   generalization result is clear; its magnitude rests on one experiment.
 - The raster checkpoint in the in-distribution table was resumed mid-run with a
   reset optimizer, making it a capacity probe rather than a clean architecture
   ablation. The holdout checkpoints were trained straight through.
-- Per-specification per-method outcomes are not stored in the result artifact,
-  so paired significance tests are not possible; the reported intervals are
-  percentile bootstrap over specifications.
+- The original comparison artifact lacked paired outcomes; the conditioning
+  ablation stores candidate-level per-specification outcomes and supports the
+  paired test reported above.
 
 ## Limitations
 

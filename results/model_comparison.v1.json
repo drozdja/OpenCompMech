@@ -76,13 +76,82 @@
           "n": 100
         }
       }
+    },
+    "family_holdout_tuned_conditioning_ablation": {
+      "held_out_types": ["fact_rotation", "fact_translation"],
+      "n_specs": 200,
+      "candidates_per_spec": 8,
+      "sampling_steps": 50,
+      "guidance_scale": 2.0,
+      "source_artifact_sha256": "0a2a36965f83a2a5bb7fac71067503d16ef3b9030b73f11cadff6ccd55407dac",
+      "methods": {
+        "reference_native": {
+          "pass_at_1": [1.0, 1.0, 1.0],
+          "pass_at_8": [1.0, 1.0, 1.0]
+        },
+        "raster_projected": {
+          "pass_at_1": [0.07, 0.04, 0.105],
+          "pass_at_8": [0.15, 0.105, 0.2],
+          "candidate_pass_rate": 0.065
+        },
+        "graph_raw": {
+          "pass_at_1": [0.0, 0.0, 0.0],
+          "pass_at_8": [0.04, 0.015, 0.07],
+          "candidate_pass_rate": 0.005
+        },
+        "graph_repaired": {
+          "pass_at_1": [0.12, 0.08, 0.165],
+          "pass_at_8": [0.525, 0.455, 0.59],
+          "candidate_pass_rate": 0.110625
+        },
+        "graph_null_raw": {
+          "pass_at_1": [0.0, 0.0, 0.0],
+          "pass_at_8": [0.005, 0.0, 0.015],
+          "candidate_pass_rate": 0.000625
+        },
+        "graph_null_repaired": {
+          "pass_at_1": [0.005, 0.0, 0.015],
+          "pass_at_8": [0.165, 0.115, 0.215],
+          "candidate_pass_rate": 0.021875
+        }
+      },
+      "paired_pass_at_8": {
+        "graph_repaired_vs_graph_null_repaired": {
+          "both": 28,
+          "conditioned_only": 77,
+          "null_only": 5,
+          "neither": 90,
+          "exact_two_sided_p": 1.2e-17
+        },
+        "graph_repaired_vs_raster_projected": {
+          "both": 8,
+          "graph_only": 97,
+          "raster_only": 22,
+          "neither": 73,
+          "exact_two_sided_p": 1.99e-12
+        }
+      },
+      "pass_at_8_by_type": {
+        "fact_rotation": {
+          "raster_projected": 0.29,
+          "graph_repaired": 0.25,
+          "graph_null_repaired": 0.07,
+          "n": 100
+        },
+        "fact_translation": {
+          "raster_projected": 0.01,
+          "graph_repaired": 0.8,
+          "graph_null_repaired": 0.26,
+          "n": 100
+        }
+      }
     }
   },
   "limitations": [
-    "One training seed and one sampling schedule per experiment.",
-    "Neither model received a tuning budget.",
+    "One training realization per architecture; original checkpoints did not record explicit training seeds, so controlled replication is required.",
+    "Inference tuning used an equal 3x3 budget; training hyperparameters were not searched.",
     "The corpus and model checkpoints are not distributed in this repository.",
     "The in-distribution raster checkpoint was resumed with a reset optimizer.",
-    "Per-specification paired outcomes were not retained."
+    "Candidate-level paired outcomes are retained for the tuned conditioning ablation, but not the earlier untuned runs."
   ]
 }

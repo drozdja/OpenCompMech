@@ -82,6 +82,8 @@ def main():
     ap.add_argument("--graphs", required=True, help="dir from build_graph_dataset.py")
     ap.add_argument("--cache", required=True, help="source raster cache (for the split)")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--seed", type=int, default=None,
+                    help="training/model/data-order seed; recorded in checkpoints")
     ap.add_argument("--steps", type=int, default=60000)
     ap.add_argument("--batch", type=int, default=64)
     ap.add_argument("--lr", type=float, default=2e-4)
@@ -111,6 +113,10 @@ def main():
     ap.add_argument("--holdout-value", default=None)
     ap.add_argument("--split-plan", default=None)
     args = ap.parse_args()
+
+    if args.seed is not None:
+        torch.manual_seed(args.seed)
+        np.random.seed(args.seed)
 
     os.makedirs(args.out, exist_ok=True)
     stop_file = os.path.join(args.out, "STOP")
